@@ -68,7 +68,7 @@ Turn FX fully left before choosing another effect, then turn clockwise to bring 
 | Display | Effect | FX knob |
 |---|---|---|
 | - | Off | Base singer without an added effect. |
-| v | Vibrato | Adds pitch movement at the singer's preset rate. |
+| v | Vibrato | Increases pitch movement up to about ±4 semitones at full FX. The singer sets the rate; SPEED keeps controlling vowel glide. |
 | r | Reverb | Raises the diffuse tail and its decay. |
 | d | Delay | Adds repeats at the singer's preset echo time. |
 | o | Ring modulation | Adds modulation and sweeps its carrier from about 30 to 1,200 Hz. |
@@ -90,19 +90,19 @@ Connect Talko using a USB data cable. Open its serial port in PlatformIO Monitor
 | ee / i | IY |
 | Silence | - |
 
-Each label appears on its own line. It follows the rendered vowel glide and ERROR movement. Intermediate vowel blends use the nearest label, with a small margin around each boundary to avoid flickering. A sustained label is refreshed every 200 ms. Effect tails can blend earlier vowels.
+Each label appears on its own line. It follows the rendered vowel glide and ERROR movement. Intermediate vowel blends use the nearest label, with a small margin around each boundary to avoid flickering. A sustained label is refreshed every 200 ms. Effect tails can blend earlier vowels. Normal output contains no bank, version or audio-debug messages.
 
 Send **?** to read the firmware version, singer, effect, panel readings and audio timing counters.
 
 ## Watch the mouth in Visual Console
 
-1. Open the existing S.A.M.-compatible [Visual Console](https://www.polaxis.be/console/) in desktop Chrome or Edge. Close other serial monitors using Talko's port.
+1. Open the updated [Visual Console](https://www.polaxis.be/console/) in desktop Chrome or Edge. Close other serial monitors using Talko's port.
 2. Enable **3D Head**, or press **D** and enable **2D Mouth**.
-3. In the head or mouth menu, choose **Phoneme model → S.A.M.**
+3. In the head or mouth menu, choose **Phoneme model → Talko Monk**.
 4. Choose **Serial → Connect Port**, select Talko, and play a note.
 5. Turn SOUND to move the mouth between vowels. Hold ERROR to follow its live vowel movements. Enable **Text Input → Words** to show the labels alongside the mouth.
 
-Console's S.A.M. setting supplies the mouth-shape mapping. Talko Monk continues using its own singing engine. Sustained vowels hold the mouth open; silence closes it.
+Console's Talko Monk setting supplies the five vowel shapes. Sustained vowels hold the mouth open; silence closes it.
 
 ## Install or switch firmware
 

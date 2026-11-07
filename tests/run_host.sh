@@ -4,6 +4,9 @@ cd "$(dirname "$0")/.."
 test_build=$(mktemp -d /private/tmp/talko-monk-host.XXXXXX)
 trap 'rm -rf "$test_build"' EXIT
 cc -O2 -g -fsanitize=address,undefined -fno-sanitize-recover=all -Ilib/MonkDSP/src \
+  tests/vibrato.c -lm -o "$test_build/vibrato"
+"$test_build/vibrato"
+cc -O2 -g -fsanitize=address,undefined -fno-sanitize-recover=all -Ilib/MonkDSP/src \
   -c lib/MonkDSP/src/monk.c -o "$test_build/monk.o"
 c++ -O2 -g -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined \
   -fno-sanitize-recover=all -Itests/host -Ilib/MonkDSP/src \

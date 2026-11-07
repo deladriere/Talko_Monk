@@ -67,6 +67,7 @@ static const float FORMANT_BW[NUM_FORMANTS] = {32.5f, 47.5f, 62.5f};
 #define EXCITATION_SCALE (1 << EXCITATION_BITS)
 
 static int16_t sine_tbl[SINE_SIZE] MK_POOL;
+static float vibrato_boost;
 static int16_t clip_tbl[CLIP_STEPS + 1] MK_POOL;
 static float formant_tbl[NUM_FORMANTS][SPLINE_SIZE] MK_POOL;
 static int16_t env_tbl[NUM_FORMANTS][GRAIN_LEN] MK_POOL;   /* the formant's decay times the window */
@@ -307,7 +308,7 @@ static void update_vibrato(mk_voice_t *v)
 {
     const float rate = (v->vibrato_depth * 0.2f + 1.0f) * v->random_jitter * v->rate_scale;
     v->vibrato_inc = (uint32_t)(rate * (4294967296.0f / MK_FS));
-    v->vibrato_amount = (int32_t)((v->vibrato_depth + 0.2f) * PITCH_SCALE);
+    v->vibrato_amount = (int32_t)((v->vibrato_depth + 0.2f + vibrato_boost) * PITCH_SCALE);
 }
 
 static int32_t compute_vibrato(mk_voice_t *v)
@@ -319,7 +320,7 @@ static int32_t compute_vibrato(mk_voice_t *v)
         update_vibrato(v);
     }
     const uint32_t index = v->vibrato_phase >> 22; /* 1024 table entries */
-    return (v->vibrato_amount * sine_tbl[index]) >> 15;
+    return (int32_t)(((int64_t)v->vibrato_amount * sine_tbl[index]) >> 15);
 }
 
 static uint32_t formant_step(int formant, const mk_voice_t *v, float head_scale)
@@ -876,6 +877,15 @@ void monk_growl(uint16_t amount)
     S.growl = amount > 32768u ? EXCITATION_SCALE : amount / 2;
 }
 
+void monk_vibrato_boost(uint16_t amount)
+{
+    const float depth = (amount > 32768u ? 32768u : amount) * (2.8f / 32768.0f);
+    if (vibrato_boost == depth)
+        return;
+    vibrato_boost = depth;
+    ALLV(update_vibrato(v));
+}
+
 void monk_vowel_slew(float coefficient)
 {
     W.vowel_slew = clamp01(coefficient);
@@ -909,6 +919,7 @@ static void slew_block(void)
 
 void monk_init(void)
 {
+    vibrato_boost = 0.0f;
     static const float DEF[MK_NPARAM] = {   /* upstream's defaults (processor.h) */
         0.5f, 0.5f, 0.8f, 0.5f, 0.0f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.5f, 1.0f, 0.0f, 0.5f};
     int i;

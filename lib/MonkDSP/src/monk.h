@@ -28,6 +28,7 @@ void monk_note_off(int note);
 float monk_tune_semitones(float normalized); /* PITCH curve, two octaves down and one up */
 uint32_t monk_pitch_period(void);            /* current base period in samples */
 void monk_growl(uint16_t amount);             /* Q15 noise amount, on the audio core */
+void monk_vibrato_boost(uint16_t amount);      /* Q15 extra FX depth, without changing the preset */
 void monk_vowel_slew(float coefficient);     /* per-block interpolation on the audio core */
 void monk_param(int id, float v);              /* MK_*, 0..1 */
 void monk_pressure(float p);                   /* the sounding key's pressure, 0..1 */

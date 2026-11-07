@@ -53,7 +53,7 @@ in bank 0 with Delay selected.
 | Glyph | Effect | FX knob |
 |---|---|---|
 | `-` | Off | Uses the singer's base voice. |
-| `v` | Vibrato | Adds pitch movement at the singer's preset rate. |
+| `v` | Vibrato | Increases pitch movement up to about ±4 semitones at full FX, using the singer's preset rate. SPEED keeps controlling vowel glide. |
 | `r` | Reverb | Brings up a diffuse tail and increases decay. |
 | `d` | Delay | Adds repeats at the singer's preset echo time. |
 | `o` | Ring mod | Increases modulation depth and sweeps the carrier from 30 to 1,200 Hz. |
@@ -102,14 +102,14 @@ Effect tails can contain a blend of earlier vowels. Changes are limited to
 40 updates per second; a steady vowel is refreshed every 200 ms.
 
 Open the existing Kraftor Visual Console, enable **3D Head** or **2D Mouth**,
-select **Phoneme model → S.A.M.**, and choose **Serial → Connect Port**.
+select **Phoneme model → Talko Monk**, and choose **Serial → Connect Port**.
 Select Talko's USB port. Close other serial monitors first. **Text Input →
 Words** displays the vowel labels alongside the mouth.
 
 Console requests its existing framed S.A.M. stream (`RS SAM US`); Monk sends
 `RS SAM:<code> US` events alongside the plain labels. A sustained vowel holds
-the mouth open; `-` closes it when the audio becomes quiet. No Console edit
-is required.
+the mouth open; `-` closes it when the audio becomes quiet. The dedicated
+Talko Monk menu option selects its five vowel shapes directly.
 
 ## Sleeping Monk
 
@@ -128,8 +128,9 @@ Open this folder in PlatformIO and run `pio run` to rebuild. The generated
 file is `.pio/build/pico/firmware.uf2`. For USB serial upload, close the
 serial monitor and run `pio run -t upload --upload-port <Talko serial port>`.
 
-At 115200 baud, the USB console prints the bank when it changes and audio
-timing after a gate release. Send `?` for the current bank, FX page, mode, panel readings (0–4095), and encoder and audio counters.
+At 115200 baud, normal USB serial output contains only vowel labels and
+requested mouth events. Send `?` explicitly for the firmware version,
+current bank, FX page, mode, panel readings (0–4095), and encoder and audio counters.
 `budget_us` is the time available to render 128 frames at 22.05 kHz.
 `peak_us`, `late_blocks`, and `underrun_samples` are cumulative since boot.
 
@@ -142,7 +143,7 @@ audio example, run `sh tests/run_host.sh /private/tmp/monk-error.wav`.
 The 1.0 hardware stress test swept SOUND, PITCH, SPEED and effects on
 Philip's three-voice bank, with held ERROR and the vowel stream active.
 USB serial open and closed both reported zero late blocks and zero
-underruns. Peak rendering took 3,180 µs of the available 5,805 µs.
+underruns. Peak rendering took 3,646 µs of the available 5,805 µs.
 The serial check covered all five vowel labels, silence and a request
 split across USB reads. Listening approval of ERROR is still pending.
 

@@ -124,6 +124,7 @@ void applyControls(const PanelControls &next, bool performing) {
     const float vibrato = next.effect == Fx::Vibrato ? presetDepth + (1.0f - presetDepth) * depth
                                                     : presetDepth;
     monk_param(MK_VIBRATO, vibrato);
+    monk_vibrato_boost(next.effect == Fx::Vibrato ? amount : 0);
     // Snider's factory patch is dry, but the Delay page can still give it repeats.
     const float presetDelay = preset.parameters[MK_DELAY];
     const float delay = presetDelay > 0.0f ? presetDelay : 0.65f;

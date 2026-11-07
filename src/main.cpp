@@ -285,14 +285,11 @@ void updateDisplay(uint32_t now, bool activity, bool selectionChanged) {
 }
 
 enum ConsoleReport : uint8_t {
-  ReportBank = 1,
-  ReportEffect = 2,
-  ReportAudio = 4,
-  ReportStatus = 8,
-  ReportVowel = 16,
+  ReportStatus = 1,
+  ReportVowel = 2,
 };
 
-void serviceConsole(bool bankChanged, bool effectChanged, bool gateChanged) {
+void serviceConsole() {
   static uint8_t pending = 0;
   static char buffer[512];
   static size_t length = 0;
@@ -314,7 +311,7 @@ void serviceConsole(bool bankChanged, bool effectChanged, bool gateChanged) {
   }
 
   if (!consoleConnected) {
-    pending |= ReportStatus;
+    pending |= ReportVowel;
   }
   for (unsigned i = 0; i < 16 && Serial.available(); ++i) {
     const int byte = Serial.read();
@@ -330,9 +327,6 @@ void serviceConsole(bool bankChanged, bool effectChanged, bool gateChanged) {
     }
   }
   consoleConnected = true;
-  if (bankChanged) pending |= ReportBank;
-  if (effectChanged) pending |= ReportEffect;
-  if (gateChanged && !controls.gate) pending |= ReportAudio;
 
   const uint32_t now = millis();
   if (now - lastVowelCheck >= 25) {
@@ -364,11 +358,11 @@ void serviceConsole(bool bankChanged, bool effectChanged, bool gateChanged) {
     if (status) {
       append("Talko 2 Monk Synth %u.%u\n", unsigned(VersionMajor), unsigned(VersionMinor));
     }
-    if (status || (pending & ReportBank)) {
+    if (status) {
       const Preset &preset = Presets[controls.bank];
       append("BANK %c %s\n", preset.bank, preset.name);
     }
-    if (status || (pending & ReportEffect)) {
+    if (status) {
       append("EFFECT %s page=%s\n", FxLabels[unsigned(controls.effect)].name, fxPage ? "FX" : "BANK");
     }
     if (status) {
@@ -379,7 +373,7 @@ void serviceConsole(bool bankChanged, bool effectChanged, bool gateChanged) {
       append("ENCODER detents=%lu invalid=%lu\n",
              (unsigned long)encoderDetents, (unsigned long)encoderInvalid);
     }
-    if (status || (pending & ReportAudio)) {
+    if (status) {
       const AudioStats stats = audioStats();
       append("AUDIO budget_us=%lu peak_us=%lu late_blocks=%lu underrun_samples=%lu\n",
              (unsigned long)stats.budgetUs, (unsigned long)stats.peakUs,
@@ -482,5 +476,5 @@ void loop() {
   if (bankChanged || effectChanged || rising || noteChanged || errorChanged || potsSampled) {
     updateAudioControls(controls);
   }
-  serviceConsole(bankChanged, pageChanged || effectChanged, noteChanged);
+  serviceConsole();
 }
