@@ -192,7 +192,7 @@ struct Tape {
   }
 };
 
-struct TapeFreeze {
+struct ErrorStutter {
   static constexpr unsigned HistoryFrames = 8192;
   static constexpr unsigned HistoryMask = HistoryFrames - 1;
   static constexpr unsigned FadeFrames = 128;
@@ -214,7 +214,6 @@ struct TapeFreeze {
   unsigned quiet = QuietFrames;
   Window window, nextWindow;
   unsigned position, fade, desired, step;
-  uint32_t sweepPhase, sweepStep;
   uint32_t random = 189295u;
   uint16_t initialSound, sound;
   bool held, pending, scanning, splicing;
@@ -227,7 +226,6 @@ struct TapeFreeze {
     }
     if (pressed) {
       desired = MaxFrames - (MaxFrames - MinFrames) * speed / FxAdcMax;
-      sweepStep = PhasePerHz * (100 + 520 * speed / FxAdcMax) / 100;
       sound = newSound;
       const int move = int(sound) - initialSound;
       scanning = scanning || move > 48 || move < -48;
@@ -266,7 +264,6 @@ struct TapeFreeze {
     position = (window.length / 2) * Unit;
     splicing = false;
     random = random * 1664525u + 1013904223u + uint16_t(history[(head - 1) & HistoryMask]);
-    sweepPhase = (random & 0x40000000u) ? 0x40000000u : 0xc0000000u;
     pending = false;
   }
 
@@ -310,9 +307,7 @@ struct TapeFreeze {
       const unsigned splice = position - spliceStart;
       loop = blend(loop, read(nextWindow, splice), splice, SpliceFrames * Unit);
     }
-    const int32_t motor = 240 + sine[sweepPhase >> 24] / 192;
-    sweepPhase += sweepStep;
-    position += step * motor / Unit;
+    position += step;
     if (position >= end) {
       window = nextWindow;
       position = position - end + SpliceFrames * Unit;
@@ -338,7 +333,7 @@ struct TapeFreeze {
 };
 
 Tape tape{};
-TapeFreeze freeze{};
+ErrorStutter freeze{};
 Space space{};
 Fx selected = Fx::Delay;
 int32_t wetAmount = 0;

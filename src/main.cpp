@@ -2,6 +2,7 @@
 #include "audio.h"
 #include "presets.h"
 #include "talko_startup.h"
+#include "vowel_labels.h"
 
 #include <Arduino.h>
 #include <cstdio>
@@ -20,8 +21,8 @@ constexpr uint DecimalPoint = 12;
 constexpr uint SelectPin = 13;
 constexpr uint ModeB = 14;
 constexpr uint ModeA = 15;
-constexpr uint8_t VersionMajor = 0;
-constexpr uint8_t VersionMinor = 9;
+constexpr uint8_t VersionMajor = 1;
+constexpr uint8_t VersionMinor = 0;
 constexpr uint SoundPin = 26;
 constexpr uint FxPin = 27;
 constexpr uint SpeedPin = 28;
@@ -288,27 +289,59 @@ enum ConsoleReport : uint8_t {
   ReportEffect = 2,
   ReportAudio = 4,
   ReportStatus = 8,
+  ReportVowel = 16,
 };
 
 void serviceConsole(bool bankChanged, bool effectChanged, bool gateChanged) {
   static uint8_t pending = 0;
-  static char buffer[384];
+  static char buffer[512];
   static size_t length = 0;
   static size_t sent = 0;
+  static VowelLabel vowelLabel;
+  static const char *currentVowel = "-";
+  static const char *reportedVowel = nullptr;
+  static uint32_t lastVowelCheck = 0, lastVowelReport = 0;
+  static bool mouthEnabled = false;
+  static unsigned requestOffset = 0;
+  constexpr char MouthRequest[] = "\x1eSAM\x1f";
   if (!Serial) {
     consoleConnected = false;
     pending = 0;
     length = sent = 0;
+    mouthEnabled = false;
+    requestOffset = 0;
     return;
   }
 
-  if (!consoleConnected || (Serial.available() && Serial.read() == '?')) {
+  if (!consoleConnected) {
     pending |= ReportStatus;
+  }
+  for (unsigned i = 0; i < 16 && Serial.available(); ++i) {
+    const int byte = Serial.read();
+    if (byte == '?') pending |= ReportStatus;
+    if (byte == MouthRequest[requestOffset]) {
+      if (++requestOffset == sizeof(MouthRequest) - 1) {
+        mouthEnabled = true;
+        pending |= ReportVowel;
+        requestOffset = 0;
+      }
+    } else {
+      requestOffset = byte == MouthRequest[0] ? 1 : 0;
+    }
   }
   consoleConnected = true;
   if (bankChanged) pending |= ReportBank;
   if (effectChanged) pending |= ReportEffect;
   if (gateChanged && !controls.gate) pending |= ReportAudio;
+
+  const uint32_t now = millis();
+  if (now - lastVowelCheck >= 25) {
+    lastVowelCheck = now;
+    currentVowel = vowelLabel.update(audioVisualState());
+    if (currentVowel != reportedVowel || now - lastVowelReport >= 200) {
+      pending |= ReportVowel;
+    }
+  }
 
   if (!pending && sent == length) {
     return;
@@ -351,6 +384,14 @@ void serviceConsole(bool bankChanged, bool effectChanged, bool gateChanged) {
       append("AUDIO budget_us=%lu peak_us=%lu late_blocks=%lu underrun_samples=%lu\n",
              (unsigned long)stats.budgetUs, (unsigned long)stats.peakUs,
              (unsigned long)stats.lateBlocks, (unsigned long)stats.underrunSamples);
+    }
+    if (status || (pending & ReportVowel)) {
+      // Plain labels serve text consoles. Framed events hold Console's S.A.M.
+      // mouth until the next vowel or silence, even on a sustained drone.
+      append("%s\n", currentVowel);
+      if (mouthEnabled) append("\x1eSAM:%s\x1f", currentVowel);
+      reportedVowel = currentVowel;
+      lastVowelReport = now;
     }
     pending = 0;
   }

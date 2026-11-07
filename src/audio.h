@@ -24,8 +24,14 @@ struct AudioStats {
   uint32_t underrunSamples;
 };
 
+struct AudioVisualState {
+  uint16_t vowel; // Actual rendered vowel position, 0..4095.
+  bool audible;
+};
+
 constexpr uint16_t ControlMax = 4095;
 
 void setupAudio(const PanelControls &controls);
 void updateAudioControls(const PanelControls &controls);
 AudioStats audioStats();
+AudioVisualState audioVisualState();

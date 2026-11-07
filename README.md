@@ -1,12 +1,12 @@
-# Talko 2 Monk Synth 0.9
+# Talko 2 Monk Synth 1.0
 
 A singing formant synthesizer for the Talko 2 RP2040. The encoder selects
 one of the 12 MONK‑1 factory singers. SOUND sweeps the vowel live as the
 ALGORITHM control does on the FM‑1.
 
-At startup, the front display shows `0`, the dot, then `9`. The rear
-LED flashes blue once for the dot and green nine times for the minor
-version. Red flashes count the major version when it is above zero.
+At startup, the front display shows `1`, the dot, then `0`. The rear
+LED flashes red once for the major version and blue once for the dot.
+The zero minor version has no green count flashes.
 
 ## Play
 
@@ -20,8 +20,8 @@ counterclockwise. Hold **SPEAK** and turn **SOUND** through its range.
 | SPEAK button or GATE input | Start a note using the selected switch mode. |
 | PITCH | Tune from A0 at the left end through A2 at noon to A3 at the right end. |
 | FX | Turn fully left for dry sound, then turn clockwise to bring in the selected effect. |
-| ERROR | Hold to loop and bend a slice of the current audio. Release to return to the live voice. |
-| SPEED | Turn clockwise for faster vowel changes. While holding ERROR, turn clockwise to go from a slow warble to a fast stutter. |
+| ERROR | Hold for a varied live vocal performance on the selected singer. Release to return to the panel settings. |
+| SPEED | Turn clockwise for faster vowel changes. While holding ERROR, turn clockwise for faster gestures and shorter stutters. |
 
 | Bank | Singer | Bank | Singer |
 |---|---|---|---|
@@ -40,7 +40,7 @@ The encoder stops at bank 0 and bank b. Turn back to select another bank.
 | Middle | Gate. The note lasts as long as the button or input is held. |
 | Right | Drone. One trigger starts the note and the next releases it. |
 
-Philip uses three unison voices in this prototype. Jerry and Marley share
+Philip uses three unison voices. Jerry and Marley share
 the same factory audio parameters.
 
 ## FX page
@@ -68,16 +68,48 @@ then turn clockwise to bring in the new effect. A singer’s factory
 vibrato is part of its base sound. Shimmer uses octave-up feedback in a
 reverb loop. [Shimmer design background](https://valhalladsp.com/2010/05/11/enolanois-shimmer-sound-how-it-is-made/)
 
-## ERROR tape freeze
+## ERROR performance
 
-Hold ERROR to capture the voice or effect tail. The slice keeps looping
-until release, with a changing tape speed and occasional reversed passes.
-If you hold ERROR before playing a note, the capture waits for sound.
+Play a note, then hold ERROR. The selected singer moves through vowel
+chatter, rising and falling pitch phrases, octave jumps and brief stutters,
+with Growl and Shimmer passages. The gestures vary while held and between
+presses. They follow the current singer and knob positions.
 
-While holding ERROR, turn SPEED from a slow warble to a fast stutter,
-PITCH to bend the loop, and SOUND to scrub through the captured audio.
-A little live voice stays audible underneath. Release for a short
-crossfade back to the live voice.
+SPEED sets the gesture pace. SOUND and PITCH remain live. FX controls the
+effect level, including the Growl and Shimmer passages; fully left keeps
+those effects dry. ERROR's vowel, pitch and stutter movements still work.
+
+Once a note is playing, ERROR keeps it sounding until release. If pressed
+before a note, ERROR waits for SPEAK or GATE. Release restores the current
+bank, effect and panel settings, with normal gate and mode-switch behavior.
+
+## Vowel labels and Visual Console
+
+USB serial at 115200 baud prints one vowel code per line:
+
+| SOUND position | Vowel | Console code |
+|---|---|---|
+| Far left | oo / u | `UW` |
+| One quarter | oh / o | `OH` |
+| Centre | ah / a | `AA` |
+| Three quarters | eh / e | `EH` |
+| Far right | ee / i | `IY` |
+| Silence | Closed mouth | `-` |
+
+The label follows the rendered vowel glide and ERROR movement, with a small
+hysteresis around boundaries. Intermediate vowels use their nearest label.
+Effect tails can contain a blend of earlier vowels. Changes are limited to
+40 updates per second; a steady vowel is refreshed every 200 ms.
+
+Open the existing Kraftor Visual Console, enable **3D Head** or **2D Mouth**,
+select **Phoneme model → S.A.M.**, and choose **Serial → Connect Port**.
+Select Talko's USB port. Close other serial monitors first. **Text Input →
+Words** displays the vowel labels alongside the mouth.
+
+Console requests its existing framed S.A.M. stream (`RS SAM US`); Monk sends
+`RS SAM:<code> US` events alongside the plain labels. A sustained vowel holds
+the mouth open; `-` closes it when the audio becomes quiet. No Console edit
+is required.
 
 ## Sleeping Monk
 
@@ -89,7 +121,7 @@ playing display visible.
 
 ## Install and build
 
-For a BOOTSEL install, copy [Talko_Monk_Synth-0.9.uf2](Talko_Monk_Synth-0.9.uf2)
+For a BOOTSEL install, copy [Talko_Monk_Synth-1.0.uf2](Talko_Monk_Synth-1.0.uf2)
 onto the `RPI-RP2` drive. The module restarts automatically.
 
 Open this folder in PlatformIO and run `pio run` to rebuild. The generated
@@ -101,22 +133,23 @@ timing after a gate release. Send `?` for the current bank, FX page, mode, panel
 `budget_us` is the time available to render 128 frames at 22.05 kHz.
 `peak_us`, `late_blocks`, and `underrun_samples` are cumulative since boot.
 
-The RP2040 build and desktop DSP checks cover all 12 presets, vowel
-sweeps, pitch changes, echo and release. The output uses the Talko mono
-PWM circuit on GP1. The 0.2 timing test held notes and swept SOUND
-and PITCH across all 12 banks at full FX. Both the open and closed USB serial
-runs reported zero underruns. The longest block took 2,933 µs of the available
-5,805 µs. Core 1 renders the audio. Core 0 services the panel and USB, with
-PWM updates at higher interrupt priority than USB.
+The native audio check runs the actual firmware control and rendering code,
+with Pico hardware calls stubbed. Run `sh tests/run_host.sh` for all twelve
+banks, effects, held ERROR, live control changes, arming and release checks
+under AddressSanitizer and UndefinedBehaviorSanitizer. To save an eleven-second
+audio example, run `sh tests/run_host.sh /private/tmp/monk-error.wav`.
 
-The 0.3 hardware stress test swept SOUND, PITCH and SPEED on Philip's
-three-voice bank with each effect at full FX and with ERROR freeze
-engaged and released. The longest block took 3,629 µs with no late
-blocks or underruns.
+The 1.0 hardware stress test swept SOUND, PITCH, SPEED and effects on
+Philip's three-voice bank, with held ERROR and the vowel stream active.
+USB serial open and closed both reported zero late blocks and zero
+underruns. Peak rendering took 3,180 µs of the available 5,805 µs.
+The serial check covered all five vowel labels, silence and a request
+split across USB reads. Listening approval of ERROR is still pending.
 
-The 0.3.4 hardware stress test swept Shimmer and Growl at full FX on
-Philip's three-voice bank. The longest block took 3,605 µs of the
-available 5,805 µs. Both the open and closed USB serial runs had zero
-late blocks and zero underruns.
+Build toolchain: PlatformIO Raspberry Pi platform 1.17.0, installed commit
+`4d1ad09d78445f16688627de0819646fd655910e`.
+
+See [the user manual](USER_MANUAL.md) for the complete panel guide and
+[release notes](CHANGELOG.md) for the 1.0 publication status.
 
 Source and license details are in [MonkDSP provenance](lib/MonkDSP/UPSTREAM.md).

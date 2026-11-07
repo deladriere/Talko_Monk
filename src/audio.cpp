@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "audio.h"
+#include "error_performance.h"
 #include "presets.h"
 
 #include <Arduino.h>
@@ -31,6 +32,7 @@ std::atomic<uint32_t> writeIndex{0};
 std::atomic<uint32_t> peakUs{0};
 std::atomic<uint32_t> lateBlocks{0};
 std::atomic<uint32_t> underrunSamples{0};
+std::atomic<uint32_t> visualState{0};
 uint16_t duties[RingFrames];
 
 uint audioSlice;
@@ -92,7 +94,7 @@ float vowelSlew(uint16_t adc) {
   return 0.15f + 0.85f * fast * fast;
 }
 
-void applyControls(const PanelControls &next) {
+void applyControls(const PanelControls &next, bool performing) {
   static PanelControls previous{};
   static bool firstBlock = true;
   static float freezePitch = 0.0f;
@@ -145,9 +147,8 @@ void applyControls(const PanelControls &next) {
       const float octaves = constrain(bend / 12.0f, -2.0f, 2.0f);
       freezeRate = uint16_t(std::exp2(octaves) * FreezeRateUnity + 0.5f);
     }
-  } else if (firstBlock || previous.error || next.speed != previous.speed) {
-    monk_vowel_slew(vowelSlew(next.speed));
   }
+  monk_vowel_slew(performing ? 0.6f : vowelSlew(next.speed));
   setFreeze(next.error, next.speed, next.vowel, freezeRate);
   previous = next;
   firstBlock = false;
@@ -191,6 +192,11 @@ AudioStats audioStats() {
           underrunSamples.load(std::memory_order_relaxed)};
 }
 
+AudioVisualState audioVisualState() {
+  const uint32_t state = visualState.load(std::memory_order_relaxed);
+  return {uint16_t(state), bool(state & 0x10000u)};
+}
+
 bool core1_separate_stack = true;
 
 void setup1() {
@@ -211,18 +217,30 @@ void loop1() {
 
   const uint32_t start = micros();
   const PanelControls panel = readControls();
-  applyControls(panel);
+  static ErrorPerformance errorPerformance;
+  const PanelControls voice = errorPerformance.update(panel, BlockFrames, monk_ui_active);
+  applyControls(voice, panel.error);
   static int32_t stereo[BlockFrames * 2];
   monk_render(stereo, BlockFrames, 4096);
-  if (panel.effect == Fx::Shimmer || panel.effect == Fx::Tape) {
+  if (voice.effect == Fx::Shimmer || voice.effect == Fx::Tape) {
     setPitchShiftPeriod(monk_pitch_period());
   }
+  int32_t blockPeak = 0;
   for (uint i = 0; i < BlockFrames; ++i) {
     // Average the stereo channels and convert the 24-bit PCM to PWM duty.
     const int16_t mono = processEffect((stereo[2 * i] + stereo[2 * i + 1]) / 512);
     const int32_t processed = processFreeze(mono);
+    blockPeak = max(blockPeak, processed < 0 ? -processed : processed);
     duties[(write + i) & RingMask] = ((processed + 32768) * pwmPeriod + 32768u) >> 16;
   }
+  static unsigned visualHold = 0;
+  if (blockPeak > 64) {
+    visualHold = SampleRate * 80 / 1000;
+  } else {
+    visualHold = visualHold > BlockFrames ? visualHold - BlockFrames : 0;
+  }
+  const uint16_t vowel = uint16_t(constrain(float(monk_ui_vowel), 0.0f, 1.0f) * ControlMax);
+  visualState.store(vowel | (visualHold ? 0x10000u : 0), std::memory_order_relaxed);
   writeIndex.store(write + BlockFrames, std::memory_order_release);
 
   const uint32_t elapsed = micros() - start;
