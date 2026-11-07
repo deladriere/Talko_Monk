@@ -145,12 +145,12 @@ Philip's three-voice bank, with held ERROR and the vowel stream active.
 USB serial open and closed both reported zero late blocks and zero
 underruns. Peak rendering took 3,646 µs of the available 5,805 µs.
 The serial check covered all five vowel labels, silence and a request
-split across USB reads. Listening approval of ERROR is still pending.
+split across USB reads.
 
 Build toolchain: PlatformIO Raspberry Pi platform 1.17.0, installed commit
 `4d1ad09d78445f16688627de0819646fd655910e`.
 
-See [the user manual](USER_MANUAL.md) for the complete panel guide and
-[release notes](CHANGELOG.md) for the 1.0 publication status.
+Read [the user manual online](https://www.polaxis.be/talko-monk-user-manual/), or use the
+[local copy](USER_MANUAL.md). See [release notes](CHANGELOG.md) for 1.0 details.
 
 Source and license details are in [MonkDSP provenance](lib/MonkDSP/UPSTREAM.md).

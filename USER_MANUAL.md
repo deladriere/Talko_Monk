@@ -1,6 +1,6 @@
 # Talko Monk User Manual
 
-**Version 1.0 for Talko 2 (RP2040). Draft for the listening candidate; publication is pending approval.**
+**Version 1.0 for Talko 2 (RP2040).**
 
 Talko Monk turns Talko 2 into a singing formant synthesizer. Choose one of twelve singers, move continuously through five vowel shapes, and play the voice with the panel or a gate. ERROR adds a changing vocal performance while you hold it.
 
@@ -106,7 +106,7 @@ Console's Talko Monk setting supplies the five vowel shapes. Sustained vowels ho
 
 ## Install or switch firmware
 
-Use **Talko_Monk_Synth-1.0.uf2** for **Talko 2 (RP2040)**. The candidate is supplied locally while its sound is being reviewed. A public download link will be added after approval.
+Use **Talko_Monk_Synth-1.0.uf2** for **Talko 2 (RP2040)**. The public firmware download will be linked here once the GitHub release is available.
 
 1. Connect Talko to your computer with a USB data cable.
 2. Hold **BOOTSEL**, press and release **RESET**, then release BOOTSEL after a second or two.
@@ -125,4 +125,4 @@ After five minutes without activity, the display dims and a little mouth opens a
 
 The engine comes from [FM-1 MONK-1](https://github.com/charlesvestal/fm1-monk), Charles Vestal's embedded port of [MonkSynth](https://github.com/JonET/monksynth) by Jonathan Taylor. The Talko adaptation adds panel controls, the twelve singer banks, effects, ERROR performance, USB vowel labels and PWM audio for the RP2040.
 
-The source is supplied with this firmware under GPL-3.0-only, with the upstream MIT notice retained. See [LICENSE](LICENSE) and [MonkDSP provenance](lib/MonkDSP/UPSTREAM.md).
+The source is supplied with this firmware under GPL-3.0-only, with the upstream MIT notice retained. The source package includes the full license and MonkDSP provenance notes.

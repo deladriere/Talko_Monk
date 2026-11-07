@@ -1,8 +1,8 @@
 # Release notes
 
-## 1.0 candidate
+## 1.0 - 7 November 2026
 
-Publication is waiting for the user's listening approval of ERROR. Work stays on `main`.
+First Talko Monk release for Talko 2 (RP2040).
 
 - Twelve MONK-1 singers, continuous vowel control, low pitch range, and three gate modes.
 - Held ERROR varies the live selected singer with vowel chatter, pitch phrases, short ratchets, Growl and Shimmer passages. It restores the panel controls on release.
@@ -12,7 +12,7 @@ Publication is waiting for the user's listening approval of ERROR. Work stays on
 - Dedicated Talko Monk model in Console's 2D Mouth and 3D Head menus.
 - Normal serial output carries only vowel labels and requested mouth events; diagnostic reports require an explicit `?`.
 - Front display and rear LED announce 1.0; Sleeping Monk appears after five minutes idle.
-- User manual prepared to follow the published Talko S.A.M. manual's organization.
+- [User manual published](https://www.polaxis.be/talko-monk-user-manual/) using the Talko S.A.M. manual's organization.
 
 Validation: native control and audio checks passed with ASan and UBSan.
 The Talko hardware stress test reported 3,646 µs peak against a 5,805 µs
